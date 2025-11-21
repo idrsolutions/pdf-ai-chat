@@ -16,12 +16,14 @@
  */
 package com.idrsolutions.examples;
 
+import com.openai.models.ChatModel;
 import org.jpedal.PdfDecoderInt;
 import org.jpedal.examples.viewer.Viewer;
 import org.jpedal.objects.PdfPageData;
 import org.jpedal.utils.LogWriter;
 
-import javax.swing.JTabbedPane;
+import javax.swing.*;
+import java.awt.image.BufferedImage;
 import java.util.Optional;
 
 public class PdfAiChat {
@@ -33,13 +35,14 @@ public class PdfAiChat {
 
         // Create chat window and ChatGPTClient
         final ChatPanel chatPanel = new ChatPanel();
-        final ChatGPTClient gpt = new ChatGPTClient("XXXXXX");
+        final ChatGPTClient gpt = new ChatGPTClient(ChatModel.GPT_5_NANO, "XXXXXX");
 
         chatPanel.setSendHandler(userMessage -> new Thread(() -> {
             try {
-                // Get the text from the current page
                 final PdfDecoderInt pdfDecoder = viewer.getPdfDecoder();
                 final int pageNum = viewer.getSwingGUI().getValues().getCurrentPage();
+
+                // Get the text from the current page
                 final PdfPageData pageData = pdfDecoder.getPdfPageData();
                 final String pageText = pdfDecoder.getGroupingObject().extractTextInRectangle(
                         pageData.getMediaBoxX(pageNum),
@@ -49,8 +52,10 @@ public class PdfAiChat {
                         pageNum,
                         false, false);
 
-                // Pass the text and question to the AI
-                final Optional<String> response = gpt.ask(pageText, userMessage);
+                // Get the image of the current page
+                final BufferedImage pageImage = pdfDecoder.getPageAsImage(pageNum);
+
+                final Optional<String> response = gpt.ask(userMessage, pageText, pageImage);
                 chatPanel.addMessage(response.orElse(""), false);
             } catch (Exception ex) {
                 chatPanel.addMessage("Error: " + ex.getMessage(), false);
