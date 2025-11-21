@@ -60,7 +60,7 @@ public class PdfAiChat {
 
         // Add to JPedal panels
         final JTabbedPane sideTabBar = viewer.getSwingGUI().getSideTabBar();
-        sideTabBar.addTab("AI", chatPanel);
+        sideTabBar.addTab("AI", new ImageIcon(), chatPanel);
     }
 
 }
