@@ -58,6 +58,7 @@ public class ChatPanel extends JPanel {
 
     private static final Color OUTGOING_BG = new Color(0xD2F2FC);
     private static final Color INCOMING_BG = new Color(0xFFFFFF);
+    private static final Color LIST_BG = new Color(0xE5DDD5);
     private static final int BUBBLE_MAX_WIDTH = 320;
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
@@ -70,7 +71,7 @@ public class ChatPanel extends JPanel {
 
         messageList = new JPanel();
         messageList.setLayout(new BoxLayout(messageList, BoxLayout.Y_AXIS));
-        messageList.setBackground(new Color(0xE5DDD5));
+        messageList.setBackground(LIST_BG);
         messageList.setBorder(new EmptyBorder(8, 8, 8, 8));
 
         scrollPane = new JScrollPane(messageList,
@@ -87,29 +88,31 @@ public class ChatPanel extends JPanel {
         inputField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    if (e.isShiftDown()) {
-                        inputField.insert("\n", inputField.getCaretPosition());
-                        e.consume();
-                    } else {
-                        e.consume();
-                        sendCurrentText();
-                    }
+                if (e.getKeyCode() != KeyEvent.VK_ENTER) {
+                    return;
+                }
+
+                if (e.isShiftDown()) {
+                    inputField.insert("\n", inputField.getCaretPosition());
+                    e.consume();
+                } else {
+                    e.consume();
+                    sendCurrentText();
                 }
             }
         });
 
-        JScrollPane inputScroll = new JScrollPane(
+        final JScrollPane inputScroll = new JScrollPane(
                 inputField,
                 VERTICAL_SCROLLBAR_AS_NEEDED,
                 HORIZONTAL_SCROLLBAR_NEVER
         );
         inputScroll.setBorder(null);
 
-        JButton sendButton = new JButton("Send");
+        final JButton sendButton = new JButton("Send");
         sendButton.addActionListener(e -> sendCurrentText());
 
-        JPanel inputPanel = new JPanel(new BorderLayout(6, 6));
+        final JPanel inputPanel = new JPanel(new BorderLayout(6, 6));
         inputPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
         inputPanel.add(inputScroll, BorderLayout.CENTER);
         inputPanel.add(sendButton, BorderLayout.EAST);
@@ -126,9 +129,15 @@ public class ChatPanel extends JPanel {
 
     private void sendCurrentText() {
         String text = inputField.getText();
-        if (text == null) return;
+        if (text == null) {
+            return;
+        }
+
         text = text.trim();
-        if (text.isEmpty()) return;
+        if (text.isEmpty()) {
+            return;
+        }
+
         inputField.setText("");
 
         if (sendHandler != null) {
@@ -157,22 +166,22 @@ public class ChatPanel extends JPanel {
     }
 
     private void addMessageOnEDT(String message, boolean outgoing) {
-        JPanel wrapper = new JPanel(new FlowLayout(outgoing ? FlowLayout.RIGHT : FlowLayout.LEFT));
+        final JPanel wrapper = new JPanel(new FlowLayout(outgoing ? FlowLayout.RIGHT : FlowLayout.LEFT));
         wrapper.setOpaque(false);
 
-        JPanel bubble = new JPanel();
+        final JPanel bubble = new JPanel();
         bubble.setLayout(new BorderLayout());
         bubble.setBorder(new EmptyBorder(8, 12, 8, 12));
         bubble.setBackground(outgoing ? OUTGOING_BG : INCOMING_BG);
         bubble.setOpaque(true);
         bubble.setMaximumSize(new Dimension(BUBBLE_MAX_WIDTH, Integer.MAX_VALUE));
 
-        String safe = htmlEscape(message).replace("\n", "<br/>");
-        JLabel lbl = new JLabel("<html><body style='width: " + (BUBBLE_MAX_WIDTH - 24) + "px; font-family: Arial; font-size: 12px;'>" + safe + "</body></html>");
+        final String safe = htmlEscape(message).replace("\n", "<br/>");
+        final JLabel lbl = new JLabel("<html><body style='width: %dpx; font-family: Arial; font-size: 12px;'>%s</body></html>".formatted(BUBBLE_MAX_WIDTH - 24, safe));
         lbl.setBorder(null);
         lbl.setOpaque(false);
 
-        JLabel timeLabel = new JLabel(TIME_FMT.format(LocalTime.now()));
+        final JLabel timeLabel = new JLabel(TIME_FMT.format(LocalTime.now()));
         timeLabel.setFont(timeLabel.getFont().deriveFont(10f));
         timeLabel.setBorder(new EmptyBorder(4, 0, 0, 0));
         timeLabel.setOpaque(false);
@@ -190,48 +199,46 @@ public class ChatPanel extends JPanel {
         messageList.add(wrapper);
         messageList.revalidate();
         SwingUtilities.invokeLater(() -> {
-            JScrollBar v = scrollPane.getVerticalScrollBar();
+            final JScrollBar v = scrollPane.getVerticalScrollBar();
             v.setValue(v.getMaximum());
         });
     }
 
     private static String htmlEscape(String s) {
-        if (s == null) return "";
+        if (s == null) {
+            return "";
+        }
+
         return s.replace("&", "&amp;")
                 .replace("<", "&lt;")
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;");
     }
 
-    private static class RoundedCornerBorder implements Border {
-        private final Color bg;
-        private final int radius;
-
-        RoundedCornerBorder(Color bg, int radius) {
-            this.bg = bg;
-            this.radius = radius;
-        }
+    private record RoundedCornerBorder(Color bg, int radius) implements Border {
 
         @Override
-        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(bg);
-            g2.fillRoundRect(x, y, width - 1, height - 1, radius, radius);
-            g2.setColor(new Color(0, 0, 0, 30));
-            g2.drawRoundRect(x, y, width - 1, height - 1, radius, radius);
-            g2.dispose();
-        }
+            public void paintBorder(final Component c, final Graphics g,
+                    final int x, final int y, final int width, final int height) {
 
-        @Override
-        public Insets getBorderInsets(Component c) {
-            return new Insets(0, 0, 0, 0);
-        }
+                final Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(bg);
+                g2.fillRoundRect(x, y, width - 1, height - 1, radius, radius);
+                g2.setColor(new Color(0, 0, 0, 30));
+                g2.drawRoundRect(x, y, width - 1, height - 1, radius, radius);
+                g2.dispose();
+            }
 
-        @Override
-        public boolean isBorderOpaque() {
-            return true;
+            @Override
+            public Insets getBorderInsets(final Component c) {
+                return new Insets(0, 0, 0, 0);
+            }
+
+            @Override
+            public boolean isBorderOpaque() {
+                return true;
+            }
         }
-    }
 
 }
