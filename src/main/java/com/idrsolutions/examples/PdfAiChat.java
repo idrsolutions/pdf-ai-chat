@@ -39,6 +39,8 @@ public class PdfAiChat {
 
         chatPanel.setSendHandler(userMessage -> new Thread(() -> {
             try {
+                chatPanel.showLoadingIndicator();
+
                 final PdfDecoderInt pdfDecoder = viewer.getPdfDecoder();
                 final int pageNum = viewer.getSwingGUI().getValues().getCurrentPage();
 
@@ -56,6 +58,7 @@ public class PdfAiChat {
                 final BufferedImage pageImage = pdfDecoder.getPageAsImage(pageNum);
 
                 final Optional<String> response = gpt.ask(userMessage, pageText, pageImage);
+                chatPanel.hideLoadingIndicator();
                 chatPanel.addMessage(response.orElse(""), false);
             } catch (Exception ex) {
                 chatPanel.addMessage("Error: " + ex.getMessage(), false);

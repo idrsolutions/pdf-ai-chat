@@ -27,6 +27,7 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
@@ -34,6 +35,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
@@ -42,6 +44,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER;
@@ -54,6 +57,8 @@ public class ChatPanel extends JPanel {
     private final JPanel messageList;
     private final JScrollPane scrollPane;
     private final JTextArea inputField;
+    private JPanel loadingBubble;
+    private Timer loadingTimer;
     private transient Consumer<String> sendHandler;
 
     private static final Color OUTGOING_BG = new Color(0xD2F2FC);
@@ -202,6 +207,82 @@ public class ChatPanel extends JPanel {
             final JScrollBar v = scrollPane.getVerticalScrollBar();
             v.setValue(v.getMaximum());
         });
+    }
+
+    /**
+     * Show an inline loading indicator chat message.
+     */
+    public void showLoadingIndicator() {
+        if (SwingUtilities.isEventDispatchThread()) {
+            showLoadingIndicatorOnEDT();
+        } else {
+            SwingUtilities.invokeLater(this::showLoadingIndicatorOnEDT);
+        }
+    }
+
+    private void showLoadingIndicatorOnEDT() {
+        if (loadingBubble != null) {
+            return;
+        }
+
+        loadingBubble = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        loadingBubble.setOpaque(false);
+
+        final JPanel bubble = new JPanel(new BorderLayout());
+        bubble.setBorder(new EmptyBorder(8, 12, 8, 12));
+        bubble.setBackground(INCOMING_BG);
+        bubble.setOpaque(true);
+        bubble.setMaximumSize(new Dimension(BUBBLE_MAX_WIDTH, Integer.MAX_VALUE));
+
+        final JLabel lbl = new JLabel("<html><body style='width: %dpx; font-family: Arial; font-size: 12px;'>Loading...</body></html>".formatted(BUBBLE_MAX_WIDTH - 24));
+        lbl.setFont(new Font("Arial", Font.PLAIN, 12));
+        bubble.add(lbl, BorderLayout.CENTER);
+
+        bubble.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createEmptyBorder(0, 0, 6, 0),
+                new RoundedCornerBorder(bubble.getBackground(), 12)
+        ));
+
+        loadingBubble.add(bubble);
+        messageList.add(loadingBubble);
+        messageList.revalidate();
+
+        SwingUtilities.invokeLater(() -> {
+            final JScrollBar v = scrollPane.getVerticalScrollBar();
+            v.setValue(v.getMaximum());
+        });
+
+        AtomicInteger loadingDotCount = new AtomicInteger(-1);
+        loadingTimer = new Timer(500, e -> {
+            loadingDotCount.set((loadingDotCount.get() + 1) % 4);
+            lbl.setText("<html><body style='width: %dpx; font-family: Arial; font-size: 12px;'>Loading%s</body></html>".formatted(BUBBLE_MAX_WIDTH - 24, ".".repeat(loadingDotCount.get())));
+        });
+        loadingTimer.start();
+    }
+
+    /**
+     * Hide the loading indicator and remove the chat message.
+     */
+    public void hideLoadingIndicator() {
+        if (SwingUtilities.isEventDispatchThread()) {
+            hideLoadingIndicatorOnEDT();
+        } else {
+            SwingUtilities.invokeLater(this::hideLoadingIndicatorOnEDT);
+        }
+    }
+
+    private void hideLoadingIndicatorOnEDT() {
+        if (loadingTimer != null) {
+            loadingTimer.stop();
+            loadingTimer = null;
+        }
+
+        if (loadingBubble != null) {
+            messageList.remove(loadingBubble);
+            loadingBubble = null;
+            messageList.revalidate();
+            messageList.repaint();
+        }
     }
 
     private static String htmlEscape(String s) {
