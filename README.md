@@ -9,3 +9,5 @@ currently loaded document.
 
 You will need to [create an OpenAI API key](https://platform.openai.com/api-keys) to use their models. Currently, the
 project uses `GPT-5 nano` as this is the cheapest, however you can easily switch to a more powerful model.
+
+Copyright 2026 IDRsolutions
