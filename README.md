@@ -1,7 +1,7 @@
 # Chat to an LLM about the PDF file you are currently viewing
 
 A proof of concept which adds a chat window to the [JPedal Viewer](https://www.idrsolutions.com/jpedal/) and allows the
-user to have a conversation with [ChatGPT](https://github.com/openai/openai-java).It includes the current text and an
+user to have a conversation with [ChatGPT](https://github.com/openai/openai-java). It includes the current text and an
 image of the page as context so you can ask it questions about the PDF file.
 
 This project demonstrates how easy it is to extend the JPedal Viewer with custom components that interact with the
