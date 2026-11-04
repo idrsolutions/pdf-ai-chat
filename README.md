@@ -17,7 +17,7 @@ Other JPedal features:
 - [Print PDF files](https://github.com/idrsolutions/print-pdf-files)
 - [Convert PDF to PDF/A](https://github.com/idrsolutions/pdf-to-pdfa)
 - [Read PDF metadata](https://github.com/idrsolutions/pdf-metadata)
-- [Manipulator PDF files in bulk](https://github.com/idrsolutions/manipulate-pdf-files)
+- [Manipulate PDF files in bulk](https://github.com/idrsolutions/manipulate-pdf-files)
 - [Convert PDF files to images](https://github.com/idrsolutions/pdf-to-image)
 - [Extract text from PDF files](https://github.com/idrsolutions/extract-text-from-pdf)
 - [Extract images from PDF files](https://github.com/idrsolutions/extract-images-from-pdf)
